@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -35,6 +36,7 @@ export interface CloseLostData {
 
 export interface CloseWonData {
   actualCloseDate: string;
+  startRecurring: boolean;
 }
 
 interface CloseDealDialogProps {
@@ -42,6 +44,8 @@ interface CloseDealDialogProps {
   onOpenChange: (open: boolean) => void;
   type: 'won' | 'lost';
   dealCompany: string;
+  dealValue?: number;
+  dealType?: 'retainer' | 'project';
   onConfirm: (data: CloseLostData | CloseWonData) => void;
 }
 
@@ -59,6 +63,8 @@ export function CloseDealDialog({
   onOpenChange,
   type,
   dealCompany,
+  dealValue,
+  dealType,
   onConfirm,
 }: CloseDealDialogProps) {
   const [lossReason, setLossReason] = useState<LossReason | ''>('');
@@ -67,6 +73,7 @@ export function CloseDealDialog({
   const [actualCloseDate, setActualCloseDate] = useState(
     new Date().toISOString().split('T')[0]
   );
+  const [startRecurring, setStartRecurring] = useState(true);
 
   const handleConfirm = () => {
     if (type === 'lost') {
@@ -79,6 +86,7 @@ export function CloseDealDialog({
     } else {
       onConfirm({
         actualCloseDate,
+        startRecurring: dealType === 'retainer' ? startRecurring : false,
       });
     }
     
@@ -87,6 +95,7 @@ export function CloseDealDialog({
     setLossNotes('');
     setLossCompetitor('');
     setActualCloseDate(new Date().toISOString().split('T')[0]);
+    setStartRecurring(true);
     onOpenChange(false);
   };
 
@@ -94,31 +103,57 @@ export function CloseDealDialog({
     ? lossReason !== '' && (lossReason !== 'competitor' || lossCompetitor.trim() !== '')
     : actualCloseDate !== '';
 
+  const formattedValue = dealValue 
+    ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(dealValue)
+    : null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {type === 'won' ? 'Fechar como Ganho' : 'Marcar como Perdido'}
+            {type === 'won' ? 'Confirmar Fechamento' : 'Marcar como Perdido'}
           </DialogTitle>
           <DialogDescription>
             {type === 'won'
-              ? `Confirme a data de fechamento do deal com ${dealCompany}.`
+              ? `Confirme os detalhes do fechamento do deal com ${dealCompany}.`
               : `Informe o motivo da perda do deal com ${dealCompany}.`}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
           {type === 'won' ? (
-            <div className="grid gap-2">
-              <Label htmlFor="closeDate">Data de Fechamento *</Label>
-              <Input
-                id="closeDate"
-                type="date"
-                value={actualCloseDate}
-                onChange={(e) => setActualCloseDate(e.target.value)}
-              />
-            </div>
+            <>
+              {formattedValue && (
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">Deal: <span className="font-medium text-foreground">{dealCompany}</span></p>
+                  <p className="text-sm text-muted-foreground">Valor: <span className="font-semibold text-foreground">{formattedValue}</span></p>
+                </div>
+              )}
+              
+              <div className="grid gap-2">
+                <Label htmlFor="closeDate">Data de Fechamento *</Label>
+                <Input
+                  id="closeDate"
+                  type="date"
+                  value={actualCloseDate}
+                  onChange={(e) => setActualCloseDate(e.target.value)}
+                />
+              </div>
+
+              {dealType === 'retainer' && (
+                <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                  <Checkbox
+                    id="startRecurring"
+                    checked={startRecurring}
+                    onCheckedChange={(checked) => setStartRecurring(checked as boolean)}
+                  />
+                  <Label htmlFor="startRecurring" className="cursor-pointer">
+                    Iniciar cobrança recorrente
+                  </Label>
+                </div>
+              )}
+            </>
           ) : (
             <>
               <div className="grid gap-2">
