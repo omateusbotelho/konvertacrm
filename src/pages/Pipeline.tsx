@@ -21,6 +21,7 @@ const STAGE_CONFIG: { id: DealStage; name: string; color: string }[] = [
   { id: "proposal", name: "Proposta", color: "stage-proposal" },
   { id: "negotiation", name: "Negociação", color: "stage-negotiation" },
   { id: "closed_won", name: "Fechado", color: "stage-closed" },
+  { id: "closed_lost", name: "Perdido", color: "stage-lost" },
 ];
 
 const stageColorMap: Record<string, string> = {

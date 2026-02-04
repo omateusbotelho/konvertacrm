@@ -181,6 +181,7 @@ export function DealModal({ open, onOpenChange, deal, mode }: DealModalProps) {
       } else if (deal) {
         await updateDeal.mutateAsync({
           id: deal.id,
+          previousCloserId: deal.closer_id,
           data: {
             title: values.title,
             company_id: values.company_id,
