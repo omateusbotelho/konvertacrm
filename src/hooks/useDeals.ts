@@ -60,10 +60,10 @@ export interface DealFilters {
 
 // Fetch all deals with filters
 export function useDeals(filters?: DealFilters) {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
 
   return useQuery({
-    queryKey: ['deals', filters],
+    queryKey: ['deals', filters, role],
     queryFn: async () => {
       let query = supabase
         .from('deals')
@@ -73,10 +73,17 @@ export function useDeals(filters?: DealFilters) {
         `)
         .order('created_at', { ascending: false });
 
-      // Apply ownership filter
+      // Apply ownership filter based on role
       if (filters?.ownership === 'mine' && user) {
-        query = query.or(`owner_id.eq.${user.id},closer_id.eq.${user.id},sdr_id.eq.${user.id}`);
+        // Build ownership filters array for clarity
+        const ownershipFilters = [
+          `owner_id.eq.${user.id}`,
+          `sdr_id.eq.${user.id}`,
+          `closer_id.eq.${user.id}`
+        ];
+        query = query.or(ownershipFilters.join(','));
       }
+      // When ownership is 'all', let RLS policies handle visibility
 
       // Apply deal type filter
       if (filters?.dealType && filters.dealType !== 'all') {
