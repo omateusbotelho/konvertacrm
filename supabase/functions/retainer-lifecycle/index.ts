@@ -17,6 +17,10 @@ interface RetainerDeal {
   created_at: string;
   closer_id: string;
   title: string;
+  actual_close_date: string | null;
+  companies?: {
+    name: string;
+  } | null;
 }
 
 serve(async (req: Request) => {
@@ -121,16 +125,26 @@ serve(async (req: Request) => {
 
     const { data: expiringDeals } = await supabase
       .from("deals")
-      .select("id, title, closer_id, company_id, actual_close_date, created_at, contract_duration_months")
+      .select(`
+        id, 
+        title, 
+        closer_id, 
+        company_id, 
+        actual_close_date, 
+        created_at, 
+        contract_duration_months,
+        companies!deals_company_id_fkey (name)
+      `)
       .eq("deal_type", "retainer")
       .eq("stage", "closed_won");
 
     const contractAlerts: string[] = [];
+    const notificationsCreated: string[] = [];
     
     for (const deal of expiringDeals || []) {
       // Use actual_close_date as contract start date if available
       const startDateStr = deal.actual_close_date || deal.created_at;
-      if (startDateStr && deal.contract_duration_months) {
+      if (startDateStr && deal.contract_duration_months && deal.closer_id) {
         const startDate = new Date(startDateStr);
         const endDate = new Date(startDate);
         endDate.setMonth(endDate.getMonth() + deal.contract_duration_months);
@@ -138,8 +152,41 @@ serve(async (req: Request) => {
         // Check if contract ends within 30 days
         if (endDate <= thirtyDaysFromNow && endDate > now) {
           const daysUntilExpiry = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          // Handle companies which may be returned as array or single object
+          const companiesData = deal.companies as { name: string } | { name: string }[] | null;
+          const companyName = Array.isArray(companiesData) 
+            ? companiesData[0]?.name 
+            : companiesData?.name || 'Cliente';
+          
           contractAlerts.push(`Deal ${deal.id} (${deal.title}) expires in ${daysUntilExpiry} days`);
           
+          // Check if notification already exists for this deal this month
+          const { data: existingNotification } = await supabase
+            .from("notifications")
+            .select("id")
+            .eq("deal_id", deal.id)
+            .eq("type", "contract_expiring")
+            .gte("created_at", new Date(now.getFullYear(), now.getMonth(), 1).toISOString())
+            .maybeSingle();
+
+          if (!existingNotification) {
+            // Create in-app notification for the closer
+            const { error: notifError } = await supabase.from("notifications").insert({
+              user_id: deal.closer_id,
+              title: `Cliente ${companyName} renova em ${daysUntilExpiry} dias`,
+              message: `O contrato "${deal.title}" vence em ${endDate.toLocaleDateString('pt-BR')}. Entre em contato para iniciar o processo de renovação.`,
+              type: "contract_expiring",
+              deal_id: deal.id,
+              company_id: deal.company_id,
+            });
+
+            if (!notifError) {
+              notificationsCreated.push(`Notification sent to closer for deal ${deal.id}`);
+            } else {
+              results.errors.push(`Notification error for deal ${deal.id}: ${notifError.message}`);
+            }
+          }
+
           // Check if renewal activity already exists this month
           const { data: existingActivity } = await supabase
             .from("activities")
@@ -167,12 +214,21 @@ serve(async (req: Request) => {
       }
     }
 
+    console.log("Retainer lifecycle completed:", {
+      invoicesCreated: results.invoicesCreated,
+      hoursReset: results.hoursReset,
+      contractAlerts: contractAlerts.length,
+      notificationsCreated: notificationsCreated.length,
+      errors: results.errors.length,
+    });
+
     return new Response(
       JSON.stringify({
         success: true,
         results: {
           ...results,
           contractAlerts,
+          notificationsCreated,
         },
         processedAt: now.toISOString(),
       }),

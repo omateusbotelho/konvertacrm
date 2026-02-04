@@ -569,6 +569,60 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          deal_id: string | null
+          id: string
+          is_read: boolean
+          message: string | null
+          read_at: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          read_at?: string | null
+          title: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          read_at?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -673,6 +727,12 @@ export type Database = {
         | "no_budget"
         | "no_fit"
         | "other"
+      notification_type:
+        | "contract_expiring"
+        | "commission_created"
+        | "invoice_created"
+        | "deal_assigned"
+        | "system"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -831,6 +891,13 @@ export const Constants = {
         "no_budget",
         "no_fit",
         "other",
+      ],
+      notification_type: [
+        "contract_expiring",
+        "commission_created",
+        "invoice_created",
+        "deal_assigned",
+        "system",
       ],
     },
   },
