@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Search, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NotificationBell } from "@/components/notifications";
+import { useTheme } from "@/hooks/useTheme";
 
 interface AppHeaderProps {
   title: string;
@@ -32,6 +33,7 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
   const { profile, role, signOut } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { theme, toggleTheme } = useTheme();
 
   const handleSignOut = async () => {
     await signOut();
@@ -72,6 +74,21 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
         {/* Mobile search button */}
         <Button variant="ghost" size="icon" className="md:hidden">
           <Search className="h-5 w-5" />
+        </Button>
+
+        {/* Theme Toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          className="text-muted-foreground hover:text-foreground"
+          title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+        >
+          {theme === 'dark' ? (
+            <Sun className="h-5 w-5" />
+          ) : (
+            <Moon className="h-5 w-5" />
+          )}
         </Button>
 
         {/* Notifications */}
