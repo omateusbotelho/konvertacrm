@@ -4,6 +4,8 @@ import { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toastSuccess, toastError } from '@/lib/toast';
 import { getStageProbability, DealStage, calculateRetainerValue } from '@/lib/deal-calculations';
+import { createDealSchema, validateData } from '@/lib/validations';
+import { logger } from '@/lib/logger';
 
 type Deal = Database['public']['Tables']['deals']['Row'];
 type DealInsert = Database['public']['Tables']['deals']['Insert'];
@@ -166,6 +168,14 @@ export function useCreateDeal() {
     mutationFn: async (data: CreateDealData) => {
       if (!user) throw new Error('Usuário não autenticado');
 
+      // Validate input data
+      const validation = validateData(createDealSchema, data);
+      if (!validation.success) {
+        const errorMessage = 'error' in validation ? validation.error : 'Dados inválidos';
+        logger.warn('Deal creation validation failed', { error: errorMessage });
+        throw new Error(`Dados inválidos: ${errorMessage}`);
+      }
+
       // Calculate total value for retainer
       let totalValue = data.value;
       if (data.deal_type === 'retainer' && data.monthly_value && data.contract_duration_months) {
@@ -216,13 +226,14 @@ export function useCreateDeal() {
 
       return deal;
     },
-    onSuccess: () => {
+    onSuccess: (deal) => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       queryClient.invalidateQueries({ queryKey: ['activities'] });
+      logger.info('Deal created successfully', { dealId: deal.id, userId: user?.id });
       toastSuccess('Deal criado com sucesso!');
     },
     onError: (error) => {
-      console.error('Error creating deal:', error);
+      logger.error('Error creating deal', error as Error, { userId: user?.id });
       toastError('Erro ao criar deal. Tente novamente.');
     },
   });
