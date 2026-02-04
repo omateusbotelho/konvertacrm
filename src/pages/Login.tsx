@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
 import { toastSuccess, toastError } from "@/lib/toast";
+import konvertaLogo from "@/assets/konverta-logo.png";
 
 // Validation schemas
 const emailSchema = z.string().email("E-mail inválido");
@@ -77,13 +78,12 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
-        <div className="flex flex-col items-center space-y-2">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-            <span className="text-xl font-bold text-primary-foreground">K</span>
-          </div>
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight">
-            KonvertaOS
-          </h1>
+        <div className="flex justify-center">
+          <img 
+            src={konvertaLogo} 
+            alt="KonvertaOS" 
+            className="h-16 w-auto"
+          />
         </div>
 
         {/* Form */}
