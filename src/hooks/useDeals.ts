@@ -157,7 +157,7 @@ const getDefaultSDRId = (
   return null;
 };
 
-// Create a new deal
+// Create a new deal (atomic with activity)
 export function useCreateDeal() {
   const queryClient = useQueryClient();
   const { user, role } = useAuth();
@@ -172,47 +172,53 @@ export function useCreateDeal() {
         totalValue = calculateRetainerValue(data.monthly_value, data.contract_duration_months);
       }
 
-      const dealData: DealInsert = {
+      // Prepare deal data for atomic function
+      const dealData = {
         title: data.title,
-        company_id: data.company_id,
+        company_id: data.company_id || null,
         deal_type: data.deal_type,
         value: totalValue,
-        monthly_value: data.monthly_value,
-        contract_duration_months: data.contract_duration_months,
+        monthly_value: data.monthly_value || null,
+        contract_duration_months: data.contract_duration_months || null,
         source: data.source,
-        expected_close_date: data.expected_close_date,
+        expected_close_date: data.expected_close_date || null,
         owner_id: user.id,
         sdr_id: getDefaultSDRId(data.sdr_id, user.id, role),
-        closer_id: data.closer_id,
-        monthly_hours: data.monthly_hours,
+        closer_id: data.closer_id || null,
+        monthly_hours: data.monthly_hours || null,
         hours_rollover: data.hours_rollover || false,
         stage: 'lead',
         probability: getStageProbability('lead'),
       };
 
-      const { data: deal, error } = await supabase
-        .from('deals')
-        .insert(dealData)
-        .select()
-        .single();
+      // Call atomic database function
+      const { data: result, error } = await supabase
+        .rpc('create_deal_with_activity', {
+          deal_data: dealData,
+          activity_title: 'Deal criado',
+          activity_company_id: data.company_id || null,
+          activity_created_by: user.id
+        });
 
       if (error) throw error;
 
-      // Create automatic activity for deal creation
-      await supabase.from('activities').insert({
-        title: 'Deal criado',
-        type: 'note',
-        deal_id: deal.id,
-        company_id: data.company_id,
-        created_by: user.id,
-        is_completed: true,
-        completed_at: new Date().toISOString(),
-      });
+      // Fetch the complete deal with relationships
+      const { data: deal, error: fetchError } = await supabase
+        .from('deals')
+        .select(`
+          *,
+          companies!deals_company_id_fkey (id, name)
+        `)
+        .eq('id', result[0].deal_id)
+        .single();
+
+      if (fetchError) throw fetchError;
 
       return deal;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
       toastSuccess('Deal criado com sucesso!');
     },
     onError: (error) => {

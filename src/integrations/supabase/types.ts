@@ -745,6 +745,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_deal_with_activity: {
+        Args: {
+          activity_company_id: string
+          activity_created_by: string
+          activity_title: string
+          deal_data: Json
+        }
+        Returns: {
+          activity_id: string
+          deal_id: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
