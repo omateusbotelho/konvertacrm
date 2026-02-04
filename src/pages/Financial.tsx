@@ -1,8 +1,10 @@
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrendingUp, TrendingDown, DollarSign, Calendar, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Calendar, ArrowUpRight, ArrowDownRight, FileText } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { InvoicesList } from "@/components/invoices";
+import { useInvoiceMetrics } from "@/hooks/useInvoices";
 
 const cashFlowData = [
   { month: "Jan", entrada: 95000, saida: 72000 },
@@ -28,11 +30,24 @@ const upcomingPayments = [
 ];
 
 export default function Financial() {
+  const { data: metrics } = useInvoiceMetrics();
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
   return (
     <AppLayout title="Financeiro" subtitle="Controle de receita, despesas e comissões">
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList>
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+          <TabsTrigger value="invoices" className="gap-2">
+            <FileText className="h-4 w-4" />
+            Faturas
+          </TabsTrigger>
           <TabsTrigger value="commissions">Comissões</TabsTrigger>
           <TabsTrigger value="projections">Projeções</TabsTrigger>
         </TabsList>
@@ -151,6 +166,60 @@ export default function Financial() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="invoices" className="space-y-6">
+          {/* Invoice stats */}
+          {metrics && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Pendentes</p>
+                      <p className="text-2xl font-bold">{formatCurrency(metrics.totalPending)}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{metrics.countPending} faturas</p>
+                    </div>
+                    <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                      <FileText className="h-5 w-5 text-yellow-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Vencidas</p>
+                      <p className="text-2xl font-bold text-destructive">{formatCurrency(metrics.totalOverdue)}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{metrics.countOverdue} faturas</p>
+                    </div>
+                    <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                      <ArrowDownRight className="h-5 w-5 text-destructive" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Recebido</p>
+                      <p className="text-2xl font-bold text-success">{formatCurrency(metrics.totalPaid)}</p>
+                      <p className="text-sm text-muted-foreground mt-1">Total pago</p>
+                    </div>
+                    <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center">
+                      <ArrowUpRight className="h-5 w-5 text-success" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          <InvoicesList />
         </TabsContent>
 
         <TabsContent value="commissions" className="space-y-6">
