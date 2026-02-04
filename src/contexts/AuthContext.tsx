@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { AppRole, Profile, hasPermission, Permission } from '@/types/auth';
@@ -23,6 +23,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Ref to prevent duplicate calls
+  const isLoadingUserData = useRef(false);
 
   // Fetch user profile
   const fetchProfile = async (userId: string) => {
@@ -64,24 +67,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Consolidated function to load user data
+  const loadUserData = async (userId: string) => {
+    // Prevent duplicate calls
+    if (isLoadingUserData.current) {
+      return;
+    }
+
+    isLoadingUserData.current = true;
+    
+    try {
+      const [userProfile, userRole] = await Promise.all([
+        fetchProfile(userId),
+        fetchRole(userId)
+      ]);
+      
+      setProfile(userProfile);
+      setRole(userRole);
+    } finally {
+      isLoadingUserData.current = false;
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // 1. Check existing session first
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        loadUserData(session.user.id);
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    // 2. Setup listener for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
 
-        // Defer Supabase calls with setTimeout to prevent deadlock
         if (session?.user) {
-          setTimeout(async () => {
-            const [userProfile, userRole] = await Promise.all([
-              fetchProfile(session.user.id),
-              fetchRole(session.user.id)
-            ]);
-            setProfile(userProfile);
-            setRole(userRole);
-            setIsLoading(false);
-          }, 0);
+          loadUserData(session.user.id);
         } else {
           setProfile(null);
           setRole(null);
@@ -89,22 +118,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        const [userProfile, userRole] = await Promise.all([
-          fetchProfile(session.user.id),
-          fetchRole(session.user.id)
-        ]);
-        setProfile(userProfile);
-        setRole(userRole);
-      }
-      setIsLoading(false);
-    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -152,7 +165,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (roleError) {
           console.error('Error creating user role:', roleError);
-          // Don't return error - user is created, role just failed
         }
       }
 
