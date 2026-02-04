@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -47,6 +48,7 @@ interface CloseDealDialogProps {
   dealValue?: number;
   dealType?: 'retainer' | 'project';
   onConfirm: (data: CloseLostData | CloseWonData) => void;
+  isLoading?: boolean;
 }
 
 const LOSS_REASONS: { value: LossReason; label: string }[] = [
@@ -66,6 +68,7 @@ export function CloseDealDialog({
   dealValue,
   dealType,
   onConfirm,
+  isLoading = false,
 }: CloseDealDialogProps) {
   const [lossReason, setLossReason] = useState<LossReason | ''>('');
   const [lossNotes, setLossNotes] = useState('');
@@ -202,15 +205,26 @@ export function CloseDealDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            disabled={isLoading}
+          >
             Cancelar
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={!isValid}
+            disabled={!isValid || isLoading}
             variant={type === 'won' ? 'default' : 'destructive'}
           >
-            {type === 'won' ? 'Confirmar Fechamento' : 'Confirmar Perda'}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processando...
+              </>
+            ) : (
+              type === 'won' ? 'Confirmar Fechamento' : 'Confirmar Perda'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

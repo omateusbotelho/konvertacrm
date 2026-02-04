@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useCashFlow } from "@/hooks/useDashboard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "./EmptyState";
 
 const formatCurrency = (value: number) => {
   if (value >= 1000000) {
@@ -57,9 +58,11 @@ export function CashFlowChart() {
       </CardHeader>
       <CardContent>
         {!cashFlowData || cashFlowData.length === 0 ? (
-          <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-            Sem dados suficientes
-          </div>
+          <EmptyState 
+            variant="chart" 
+            title="Sem dados de fluxo de caixa"
+            description="O gráfico será exibido quando houver faturas e deals"
+          />
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart

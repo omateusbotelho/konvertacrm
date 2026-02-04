@@ -4,3 +4,4 @@ export { CloseDealDialog } from "./CloseDealDialog";
 export type { CloseLostData, CloseWonData, LossReason } from "./CloseDealDialog";
 export { PipelineFilters } from "./PipelineFilters";
 export type { DealOwnershipFilter, DealTypeFilter } from "./PipelineFilters";
+export { DealTimeline } from "./DealTimeline";

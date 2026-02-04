@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { useTeamPerformance } from "@/hooks/useDashboard";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "./EmptyState";
 
 export function TeamPerformance() {
   const { role } = useAuth();
@@ -53,9 +54,11 @@ export function TeamPerformance() {
       </CardHeader>
       <CardContent className="space-y-4">
         {!hasTeam ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <p className="text-sm">Nenhum membro da equipe encontrado</p>
-          </div>
+          <EmptyState 
+            variant="team" 
+            title="Sem dados da equipe"
+            description="O desempenho aparecerá quando houver atividade"
+          />
         ) : (
           team.map((member) => {
             const percentage = member.target > 0 ? (member.achieved / member.target) * 100 : 0;

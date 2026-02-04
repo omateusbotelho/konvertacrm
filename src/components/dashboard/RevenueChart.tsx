@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useRevenueChart } from "@/hooks/useDashboard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "./EmptyState";
 
 export function RevenueChart() {
   const { data, isLoading } = useRevenueChart();
@@ -38,9 +39,11 @@ export function RevenueChart() {
       </CardHeader>
       <CardContent>
         {!hasData ? (
-          <div className="h-[280px] flex items-center justify-center text-muted-foreground">
-            <p className="text-sm">Nenhum dado de receita disponível</p>
-          </div>
+          <EmptyState 
+            variant="chart" 
+            title="Sem dados de receita"
+            description="Os dados aparecerão quando houver faturas pagas"
+          />
         ) : (
           <>
             <div className="h-[280px]">

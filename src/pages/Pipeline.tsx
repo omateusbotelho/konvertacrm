@@ -372,14 +372,17 @@ export default function Pipeline() {
       <CloseDealDialog
         open={closeDialogOpen}
         onOpenChange={(open) => {
-          setCloseDialogOpen(open);
-          if (!open) setPendingMove(null);
+          if (!moveDeal.isPending) {
+            setCloseDialogOpen(open);
+            if (!open) setPendingMove(null);
+          }
         }}
         type={closeDialogType}
         dealCompany={pendingMove?.deal.companies?.name || pendingMove?.deal.title || ''}
         dealValue={pendingMove?.deal.value}
         dealType={pendingMove?.deal.deal_type}
         onConfirm={handleCloseDialogConfirm}
+        isLoading={moveDeal.isPending}
       />
     </AppLayout>
   );
