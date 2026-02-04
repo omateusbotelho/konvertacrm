@@ -3,3 +3,6 @@ export { RevenueChart } from "./RevenueChart";
 export { PipelineOverview } from "./PipelineOverview";
 export { RecentDeals } from "./RecentDeals";
 export { TeamPerformance } from "./TeamPerformance";
+export { SalesFunnel } from "./SalesFunnel";
+export { CashFlowChart } from "./CashFlowChart";
+export { SalesRanking } from "./SalesRanking";
