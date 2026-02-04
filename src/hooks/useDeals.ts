@@ -130,10 +130,30 @@ export function useDealsByStage(filters?: DealFilters) {
   return { stages, isLoading, error, refetch };
 }
 
+// Helper to get default SDR ID based on role
+const getDefaultSDRId = (
+  providedSDRId: string | null | undefined, 
+  userId: string, 
+  userRole: string | null
+): string | null => {
+  // If an SDR was explicitly provided, use it
+  if (providedSDRId) {
+    return providedSDRId;
+  }
+  
+  // If current user is SDR, assign to them
+  if (userRole === 'sdr') {
+    return userId;
+  }
+  
+  // Otherwise, leave null (to be assigned later)
+  return null;
+};
+
 // Create a new deal
 export function useCreateDeal() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
 
   return useMutation({
     mutationFn: async (data: CreateDealData) => {
@@ -155,7 +175,7 @@ export function useCreateDeal() {
         source: data.source,
         expected_close_date: data.expected_close_date,
         owner_id: user.id,
-        sdr_id: data.sdr_id || user.id, // Default to current user as SDR
+        sdr_id: getDefaultSDRId(data.sdr_id, user.id, role),
         closer_id: data.closer_id,
         monthly_hours: data.monthly_hours,
         hours_rollover: data.hours_rollover || false,
