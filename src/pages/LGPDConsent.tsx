@@ -119,7 +119,7 @@ export default function LGPDConsent() {
             <CheckCircle2 className="h-16 w-16 text-primary mx-auto mb-4" />
             <h2 className="text-2xl font-bold mb-2">Obrigado!</h2>
             <p className="text-muted-foreground">
-              Seu consentimento foi registrado com sucesso. Entraremos em contato em breve.
+              Seu consentimento foi registrado com sucesso.
             </p>
           </CardContent>
         </Card>
@@ -199,7 +199,7 @@ export default function LGPDConsent() {
                       <div className="space-y-1 leading-none">
                         <FormLabel>Aceito o processamento dos meus dados *</FormLabel>
                         <FormDescription>
-                          Autorizo a KonvertaOS a processar meus dados pessoais para fins de 
+                          Autorizo o processamento dos meus dados pessoais para fins de 
                           prestação de serviços e comunicação relacionada ao nosso relacionamento comercial.
                         </FormDescription>
                         <FormMessage />
@@ -220,10 +220,10 @@ export default function LGPDConsent() {
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>Aceito receber comunicações de marketing</FormLabel>
+                        <FormLabel>Aceito receber comunicações</FormLabel>
                         <FormDescription>
-                          Autorizo o envio de newsletters, ofertas e outras comunicações 
-                          promocionais. Você pode cancelar a qualquer momento.
+                          Autorizo o envio de comunicações relacionadas aos serviços contratados. 
+                          Você pode cancelar a qualquer momento.
                         </FormDescription>
                       </div>
                     </FormItem>
