@@ -24,7 +24,6 @@ export default function Settings() {
           <TabsTrigger value="profile">Perfil</TabsTrigger>
           <TabsTrigger value="team">Equipe</TabsTrigger>
           <TabsTrigger value="notifications">Notificações</TabsTrigger>
-          <TabsTrigger value="billing">Faturamento</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
@@ -126,13 +125,6 @@ export default function Settings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="billing" className="space-y-6">
-          <Card>
-            <CardContent className="p-12 text-center text-muted-foreground">
-              <p>Informações de faturamento em desenvolvimento</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </AppLayout>
   );

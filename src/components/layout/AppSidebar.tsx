@@ -9,9 +9,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  UserCog,
-  Menu,
-  X
+  Menu
 } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -40,7 +38,6 @@ const navigation: NavItem[] = [
 ];
 
 const bottomNavigation: NavItem[] = [
-  { name: "Usuários", href: "/users", icon: UserCog, roles: ['admin'] },
   { name: "Configurações", href: "/settings", icon: Settings },
 ];
 
