@@ -67,6 +67,7 @@ export default {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
+          muted: "hsl(var(--sidebar-muted))",
         },
         chart: {
           1: "hsl(var(--chart-1))",
@@ -90,8 +91,8 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       boxShadow: {
-        "glow": "0 0 20px -5px hsl(var(--accent) / 0.3)",
-        "glow-sm": "0 0 10px -3px hsl(var(--accent) / 0.2)",
+        "glow": "0 0 20px -5px hsl(var(--primary) / 0.3)",
+        "glow-sm": "0 0 10px -3px hsl(var(--primary) / 0.2)",
         "card": "0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04)",
         "card-hover": "0 10px 40px -10px rgb(0 0 0 / 0.1)",
       },
