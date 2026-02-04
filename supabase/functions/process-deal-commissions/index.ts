@@ -136,10 +136,45 @@ serve(async (req) => {
 
     console.log(`Deal found: ${deal.title}, type: ${deal.deal_type}, value: ${deal.value}`);
 
+    // NEW: Check if closing commissions already exist for this deal
+    const { data: existingCommissions, error: checkError } = await supabaseAdmin
+      .from('commissions')
+      .select('id, commission_type, status')
+      .eq('deal_id', deal_id)
+      .eq('commission_type', 'closing');
+
+    if (checkError) {
+      console.error('Error checking existing commissions:', checkError);
+    }
+
+    // If approved/paid closing commission exists, block processing
+    if (existingCommissions && existingCommissions.length > 0) {
+      const hasProcessedCommission = existingCommissions.some(
+        (c: any) => c.status === 'approved' || c.status === 'paid'
+      );
+      
+      if (hasProcessedCommission) {
+        console.log(`Deal ${deal_id} already has processed commissions, blocking`);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Comissões já foram processadas para este deal',
+            existing_commissions: existingCommissions.length,
+            message: 'Este deal já possui comissões aprovadas ou pagas. Se precisar reprocessar, cancele as comissões existentes primeiro.'
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      console.log(`Found ${existingCommissions.length} existing commission(s) in pending/cancelled status - allowing reprocess`);
+    }
+
     // Verify deal is being closed
     if (deal.stage === 'closed_won') {
       return new Response(
-        JSON.stringify({ error: 'Deal is already closed' }),
+        JSON.stringify({ 
+          error: 'Deal is already closed',
+          message: 'Este deal já está marcado como ganho.'
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
