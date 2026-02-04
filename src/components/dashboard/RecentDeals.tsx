@@ -4,6 +4,7 @@ import { Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRecentDeals } from "@/hooks/useDashboard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "./EmptyState";
 
 const stageConfig: Record<string, { label: string; color: string }> = {
   lead: { label: "Lead", color: "stage-lead" },
@@ -51,9 +52,11 @@ export function RecentDeals() {
       </CardHeader>
       <CardContent className="space-y-4">
         {!hasDeals ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <p className="text-sm">Nenhum deal ativo encontrado</p>
-          </div>
+          <EmptyState 
+            variant="deals" 
+            title="Nenhum deal recente"
+            description="Deals ativos aparecerão aqui"
+          />
         ) : (
           deals.map((deal) => {
             const stageInfo = stageConfig[deal.stage] || { label: deal.stage, color: "stage-lead" };

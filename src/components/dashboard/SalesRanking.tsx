@@ -7,6 +7,7 @@ import { Trophy, Medal, Award, TrendingUp, Hash } from "lucide-react";
 import { useSalesRanking } from "@/hooks/useDashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "./EmptyState";
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('pt-BR', { 
@@ -148,9 +149,12 @@ export function SalesRanking() {
           
           <TabsContent value="closers" className="space-y-1">
             {sortedClosers.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                Nenhum closer com deals fechados este mês
-              </p>
+              <EmptyState 
+                variant="ranking" 
+                title="Sem atividade de closers"
+                description="O ranking aparecerá quando houver deals fechados"
+                className="py-4"
+              />
             ) : (
               sortedClosers.map((closer, index) => (
                 <RankingItem
@@ -168,9 +172,12 @@ export function SalesRanking() {
           
           <TabsContent value="sdrs" className="space-y-1">
             {sortedSdrs.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                Nenhum SDR com leads qualificados este mês
-              </p>
+              <EmptyState 
+                variant="ranking" 
+                title="Sem atividade de SDRs"
+                description="O ranking aparecerá quando houver leads qualificados"
+                className="py-4"
+              />
             ) : (
               sortedSdrs.map((sdr, index) => (
                 <RankingItem

@@ -6,3 +6,4 @@ export { TeamPerformance } from "./TeamPerformance";
 export { SalesFunnel } from "./SalesFunnel";
 export { CashFlowChart } from "./CashFlowChart";
 export { SalesRanking } from "./SalesRanking";
+export { EmptyState } from "./EmptyState";

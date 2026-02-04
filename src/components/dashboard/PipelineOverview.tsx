@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { usePipelineOverview } from "@/hooks/useDashboard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "./EmptyState";
 
 const stageColors: Record<string, string> = {
   lead: "bg-stage-lead",
@@ -57,9 +58,11 @@ export function PipelineOverview() {
         </div>
         
         {!hasData ? (
-          <div className="text-center py-4 text-muted-foreground">
-            <p className="text-sm">Nenhum deal ativo no pipeline</p>
-          </div>
+          <EmptyState 
+            variant="deals" 
+            title="Pipeline vazio"
+            description="Crie deals para visualizar a distribuição por estágio"
+          />
         ) : (
           <div className="space-y-3">
             {(stages || []).map((stage) => {

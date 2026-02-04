@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FunnelChart, Funnel, LabelList, ResponsiveContainer, Tooltip, Cell } from 'recharts';
 import { useSalesFunnel } from "@/hooks/useDashboard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "./EmptyState";
 
 const stageColors: Record<string, string> = {
   lead: 'hsl(var(--chart-1))',
@@ -60,9 +61,11 @@ export function SalesFunnel() {
       </CardHeader>
       <CardContent>
         {chartData.length === 0 ? (
-          <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-            Nenhum deal encontrado
-          </div>
+          <EmptyState 
+            variant="funnel" 
+            title="Funil vazio"
+            description="Adicione deals ao pipeline para visualizar o funil"
+          />
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <FunnelChart>
