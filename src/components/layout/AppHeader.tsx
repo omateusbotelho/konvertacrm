@@ -1,4 +1,4 @@
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AppHeaderProps {
   title: string;
@@ -21,14 +22,15 @@ interface AppHeaderProps {
 }
 
 const roleLabels = {
-  admin: { label: 'Admin', color: 'bg-accent text-accent-foreground' },
-  closer: { label: 'Closer', color: 'bg-blue-500/20 text-blue-400' },
-  sdr: { label: 'SDR', color: 'bg-purple-500/20 text-purple-400' },
+  admin: { label: 'Admin', color: 'bg-primary/20 text-primary' },
+  closer: { label: 'Closer', color: 'bg-chart-4/20 text-chart-4' },
+  sdr: { label: 'SDR', color: 'bg-chart-3/20 text-chart-3' },
 };
 
 export function AppHeader({ title, subtitle }: AppHeaderProps) {
   const { profile, role, signOut } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const handleSignOut = async () => {
     await signOut();
@@ -45,28 +47,36 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div>
-        <h1 className="text-xl font-semibold text-foreground">{title}</h1>
+    <header className={cn(
+      "sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-4 sm:px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+      isMobile && "pl-14" // Space for hamburger menu
+    )}>
+      <div className="min-w-0 flex-1">
+        <h1 className="text-lg sm:text-xl font-semibold text-foreground truncate">{title}</h1>
         {subtitle && (
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
+          <p className="text-xs sm:text-sm text-muted-foreground truncate">{subtitle}</p>
         )}
       </div>
 
-      <div className="flex items-center gap-4">
-        {/* Search */}
+      <div className="flex items-center gap-2 sm:gap-4">
+        {/* Search - Hidden on mobile, shown on tablet+ */}
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar contatos, empresas..."
-            className="w-64 pl-9 bg-muted/50 border-0 focus-visible:ring-1"
+            className="w-48 lg:w-64 pl-9 bg-muted/50 border-0 focus-visible:ring-1"
           />
         </div>
+
+        {/* Mobile search button */}
+        <Button variant="ghost" size="icon" className="md:hidden">
+          <Search className="h-5 w-5" />
+        </Button>
 
         {/* Notifications */}
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-medium text-accent-foreground">
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
             3
           </span>
         </Button>
