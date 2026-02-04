@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,8 +10,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Loader2, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Loader2, Trash2, CheckCircle2, AlertTriangle, ShieldX } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { validateLGPDToken, markTokenAsUsed } from '@/lib/lgpd-token';
 
 const deletionSchema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -21,8 +23,14 @@ const deletionSchema = z.object({
 type DeletionFormData = z.infer<typeof deletionSchema>;
 
 export default function LGPDDeletion() {
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState<'loading' | 'valid' | 'invalid'>('loading');
+  const [tokenError, setTokenError] = useState<string | null>(null);
+  const [prefilledEmail, setPrefilledEmail] = useState<string>('');
 
   const form = useForm<DeletionFormData>({
     resolver: zodResolver(deletionSchema),
@@ -33,7 +41,42 @@ export default function LGPDDeletion() {
     },
   });
 
+  // Validate token on mount
+  useEffect(() => {
+    const validate = async () => {
+      if (!token) {
+        setTokenStatus('invalid');
+        setTokenError('Token de acesso não fornecido. Utilize o link enviado por e-mail.');
+        return;
+      }
+
+      const result = await validateLGPDToken(token);
+      
+      if (!result.valid) {
+        setTokenStatus('invalid');
+        setTokenError(result.error || 'Token inválido');
+        return;
+      }
+
+      if (result.type && result.type !== 'deletion') {
+        setTokenStatus('invalid');
+        setTokenError('Este token não é válido para solicitação de exclusão.');
+        return;
+      }
+
+      setTokenStatus('valid');
+      if (result.email) {
+        setPrefilledEmail(result.email);
+        form.setValue('email', result.email);
+      }
+    };
+
+    validate();
+  }, [token, form]);
+
   const handleSubmit = async (data: DeletionFormData) => {
+    if (!token) return;
+    
     setIsSubmitting(true);
     try {
       // Find contact by email and name
@@ -70,7 +113,6 @@ export default function LGPDDeletion() {
 
       if (auditError) {
         console.error('Audit log error:', auditError);
-        // Continue even if audit fails
       }
 
       // Revoke all consents
@@ -82,6 +124,9 @@ export default function LGPDDeletion() {
         })
         .eq('contact_id', contact.id);
 
+      // Mark token as used
+      await markTokenAsUsed(token);
+
       setIsSuccess(true);
       toast.success('Solicitação de exclusão registrada!');
     } catch (error) {
@@ -91,6 +136,51 @@ export default function LGPDDeletion() {
       setIsSubmitting(false);
     }
   };
+
+  // Loading state
+  if (tokenStatus === 'loading') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center">
+            <Loader2 className="h-12 w-12 text-primary mx-auto mb-4 animate-spin" />
+            <p className="text-muted-foreground">Validando acesso...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Invalid token state
+  if (tokenStatus === 'invalid') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <ShieldX className="h-16 w-16 text-destructive" />
+            </div>
+            <CardTitle className="text-2xl">Acesso Negado</CardTitle>
+            <CardDescription>
+              Não foi possível validar seu acesso a esta página
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-4">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                <p className="text-sm text-destructive">{tokenError}</p>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Se você recebeu um link por e-mail, verifique se está utilizando o link completo.
+              Tokens expiram após 24 horas.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (isSuccess) {
     return (
@@ -140,7 +230,12 @@ export default function LGPDDeletion() {
                   <FormItem>
                     <FormLabel>E-mail cadastrado *</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="seu@email.com" {...field} />
+                      <Input 
+                        type="email" 
+                        placeholder="seu@email.com" 
+                        {...field} 
+                        disabled={!!prefilledEmail}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

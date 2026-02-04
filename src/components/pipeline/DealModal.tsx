@@ -29,12 +29,15 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useCompanies, useCreateCompany } from '@/hooks/useCompanies';
 import { useCreateDeal, useUpdateDeal, DealWithCompany, CreateDealData } from '@/hooks/useDeals';
 import { useClosers, useSDRs } from '@/hooks/useProfiles';
+import { useAuth } from '@/contexts/AuthContext';
 import { Database } from '@/integrations/supabase/types';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, Lock } from 'lucide-react';
 import { calculateRetainerValue } from '@/lib/deal-calculations';
+import { canEditDeal, getReadOnlyReason } from '@/lib/deal-permissions';
 
 type DealSource = Database['public']['Enums']['deal_source'];
 type DealType = Database['public']['Enums']['deal_type'];
@@ -75,6 +78,8 @@ interface DealModalProps {
 export function DealModal({ open, onOpenChange, deal, mode }: DealModalProps) {
   const [showNewCompanyInput, setShowNewCompanyInput] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState('');
+  
+  const { user, role } = useAuth();
 
   const { data: companies, isLoading: companiesLoading } = useCompanies();
   const { data: sdrs } = useSDRs();
@@ -82,6 +87,10 @@ export function DealModal({ open, onOpenChange, deal, mode }: DealModalProps) {
   const createDeal = useCreateDeal();
   const updateDeal = useUpdateDeal();
   const createCompany = useCreateCompany();
+
+  // Check if user can edit this deal
+  const isReadOnly = mode === 'edit' && !canEditDeal(deal, user?.id, role);
+  const readOnlyReason = mode === 'edit' ? getReadOnlyReason(deal, user?.id, role) : null;
 
   const form = useForm<DealFormValues>({
     resolver: zodResolver(dealFormSchema),
@@ -211,15 +220,28 @@ export function DealModal({ open, onOpenChange, deal, mode }: DealModalProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {mode === 'create' ? 'Novo Deal' : 'Editar Deal'}
+          <DialogTitle className="flex items-center gap-2">
+            {isReadOnly && <Lock className="h-4 w-4 text-muted-foreground" />}
+            {mode === 'create' ? 'Novo Deal' : isReadOnly ? 'Visualizar Deal' : 'Editar Deal'}
           </DialogTitle>
           <DialogDescription>
             {mode === 'create'
               ? 'Preencha os dados para criar um novo deal no pipeline.'
+              : isReadOnly
+              ? 'Você possui apenas acesso de leitura a este deal.'
               : 'Atualize os dados do deal.'}
           </DialogDescription>
         </DialogHeader>
+
+        {/* Read-only warning for SDRs */}
+        {isReadOnly && readOnlyReason && (
+          <Alert variant="destructive" className="border-warning/50 bg-warning/10">
+            <Lock className="h-4 w-4" />
+            <AlertDescription>
+              {readOnlyReason}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -558,12 +580,14 @@ export function DealModal({ open, onOpenChange, deal, mode }: DealModalProps) {
                 onClick={() => onOpenChange(false)}
                 disabled={isSubmitting}
               >
-                Cancelar
+                {isReadOnly ? 'Fechar' : 'Cancelar'}
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {mode === 'create' ? 'Criar Deal' : 'Salvar'}
-              </Button>
+              {!isReadOnly && (
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {mode === 'create' ? 'Criar Deal' : 'Salvar'}
+                </Button>
+              )}
             </DialogFooter>
           </form>
         </Form>
