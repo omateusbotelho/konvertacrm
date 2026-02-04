@@ -234,3 +234,92 @@ export const hoursSchema = z
   .int({ message: 'Horas deve ser um número inteiro' })
   .min(0, { message: 'Horas não pode ser negativo' })
   .max(744, { message: 'Horas excede o limite mensal' }); // 31 days * 24 hours
+
+// ========== DEAL VALIDATION SCHEMAS ==========
+
+const optionalUuidSchema = z.string().uuid('ID inválido').nullable().optional();
+
+export const createDealSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, 'Título é obrigatório')
+    .max(255, 'Título deve ter no máximo 255 caracteres'),
+  company_id: optionalUuidSchema,
+  deal_type: z.enum(['retainer', 'project'], {
+    required_error: 'Tipo de deal é obrigatório',
+  }),
+  value: z
+    .number()
+    .min(0.01, 'Valor deve ser positivo')
+    .max(999999999.99, 'Valor muito alto'),
+  monthly_value: z
+    .number()
+    .min(0.01, 'Valor mensal deve ser positivo')
+    .max(999999999.99, 'Valor mensal muito alto')
+    .nullable()
+    .optional(),
+  contract_duration_months: z
+    .number()
+    .int('Duração deve ser um número inteiro')
+    .min(1, 'Duração mínima é 1 mês')
+    .max(120, 'Duração máxima é 120 meses')
+    .nullable()
+    .optional(),
+  source: z.enum(
+    ['inbound', 'outbound', 'referral', 'event', 'partner', 'other'],
+    { required_error: 'Origem é obrigatória' }
+  ),
+  expected_close_date: z.string().nullable().optional(),
+  sdr_id: optionalUuidSchema,
+  closer_id: optionalUuidSchema,
+  monthly_hours: z
+    .number()
+    .int('Horas deve ser um número inteiro')
+    .min(1, 'Mínimo 1 hora')
+    .max(744, 'Máximo 744 horas')
+    .nullable()
+    .optional(),
+  hours_rollover: z.boolean().optional(),
+});
+
+export type CreateDealInput = z.infer<typeof createDealSchema>;
+
+// ========== VALIDATION HELPER FUNCTIONS ==========
+
+/**
+ * Validate data against a schema and return a friendly error message
+ */
+export function validateData<T>(schema: z.ZodSchema<T>, data: unknown): { 
+  success: true; 
+  data: T; 
+} | { 
+  success: false; 
+  error: string; 
+  errors: z.ZodError['errors'];
+} {
+  try {
+    const validatedData = schema.parse(data);
+    return { success: true, data: validatedData };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const firstError = error.errors[0];
+      return {
+        success: false,
+        error: firstError.message,
+        errors: error.errors,
+      };
+    }
+    throw error;
+  }
+}
+
+/**
+ * Sanitize string input (trim and remove dangerous characters)
+ */
+export function sanitizeString(input: string): string {
+  return input
+    .trim()
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/javascript:/gi, '');
+}
