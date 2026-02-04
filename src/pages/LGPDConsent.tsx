@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,7 +10,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Loader2, Shield, CheckCircle2 } from 'lucide-react';
+import { Loader2, Shield, CheckCircle2, ShieldX, AlertTriangle } from 'lucide-react';
+import { validateLGPDToken, markTokenAsUsed } from '@/lib/lgpd-token';
+import { useEffect } from 'react';
 
 const consentSchema = z.object({
   company_name: z.string().min(2, 'Nome da empresa é obrigatório'),
@@ -24,8 +27,14 @@ const consentSchema = z.object({
 type ConsentFormData = z.infer<typeof consentSchema>;
 
 export default function LGPDConsent() {
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState<'loading' | 'valid' | 'invalid'>('loading');
+  const [tokenError, setTokenError] = useState<string | null>(null);
+  const [prefilledEmail, setPrefilledEmail] = useState<string>('');
 
   const form = useForm<ConsentFormData>({
     resolver: zodResolver(consentSchema),
@@ -38,7 +47,42 @@ export default function LGPDConsent() {
     },
   });
 
+  // Validate token on mount
+  useEffect(() => {
+    const validate = async () => {
+      if (!token) {
+        setTokenStatus('invalid');
+        setTokenError('Token de acesso não fornecido. Utilize o link enviado por e-mail.');
+        return;
+      }
+
+      const result = await validateLGPDToken(token);
+      
+      if (!result.valid) {
+        setTokenStatus('invalid');
+        setTokenError(result.error || 'Token inválido');
+        return;
+      }
+
+      if (result.type && result.type !== 'consent') {
+        setTokenStatus('invalid');
+        setTokenError('Este token não é válido para registro de consentimento.');
+        return;
+      }
+
+      setTokenStatus('valid');
+      if (result.email) {
+        setPrefilledEmail(result.email);
+        form.setValue('email', result.email);
+      }
+    };
+
+    validate();
+  }, [token, form]);
+
   const handleSubmit = async (data: ConsentFormData) => {
+    if (!token) return;
+    
     setIsSubmitting(true);
     try {
       // Create company
@@ -46,7 +90,7 @@ export default function LGPDConsent() {
         .from('companies')
         .insert({
           name: data.company_name,
-          created_by: null, // Public submission
+          created_by: null,
         })
         .select()
         .single();
@@ -101,6 +145,9 @@ export default function LGPDConsent() {
 
       if (consentError) throw consentError;
 
+      // Mark token as used
+      await markTokenAsUsed(token);
+
       setIsSuccess(true);
       toast.success('Consentimento registrado com sucesso!');
     } catch (error) {
@@ -110,6 +157,51 @@ export default function LGPDConsent() {
       setIsSubmitting(false);
     }
   };
+
+  // Loading state
+  if (tokenStatus === 'loading') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center">
+            <Loader2 className="h-12 w-12 text-primary mx-auto mb-4 animate-spin" />
+            <p className="text-muted-foreground">Validando acesso...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Invalid token state
+  if (tokenStatus === 'invalid') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <ShieldX className="h-16 w-16 text-destructive" />
+            </div>
+            <CardTitle className="text-2xl">Acesso Negado</CardTitle>
+            <CardDescription>
+              Não foi possível validar seu acesso a esta página
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-4">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                <p className="text-sm text-destructive">{tokenError}</p>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Se você recebeu um link por e-mail, verifique se está utilizando o link completo.
+              Tokens expiram após 24 horas.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (isSuccess) {
     return (
@@ -177,7 +269,12 @@ export default function LGPDConsent() {
                   <FormItem>
                     <FormLabel>E-mail *</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="seu@email.com" {...field} />
+                      <Input 
+                        type="email" 
+                        placeholder="seu@email.com" 
+                        {...field} 
+                        disabled={!!prefilledEmail}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

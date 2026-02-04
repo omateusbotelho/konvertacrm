@@ -63,23 +63,36 @@ serve(async (req) => {
       );
     }
 
-    // 2. Check which deals already have invoices for this month (idempotency)
+    // 2. Security check: Get ALL existing invoices for this month/year (regardless of is_recurring)
+    // This prevents any duplicate invoice creation for the same deal/month/year combination
     const dealIds = retainerDeals.map(d => d.id);
     
     const { data: existingInvoices, error: invoicesError } = await supabase
       .from('invoices')
-      .select('deal_id')
+      .select('deal_id, invoice_number, is_recurring')
       .in('deal_id', dealIds)
       .eq('recurrence_month', currentMonth)
-      .eq('recurrence_year', currentYear)
-      .eq('is_recurring', true);
+      .eq('recurrence_year', currentYear);
 
     if (invoicesError) {
       console.error('Error checking existing invoices:', invoicesError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to check existing invoices', details: invoicesError }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
+    // Create a set of deal IDs that already have ANY invoice for this month/year
     const existingDealIds = new Set((existingInvoices || []).map(i => i.deal_id));
-    console.log(`${existingDealIds.size} deals already have invoices for this month`);
+    console.log(`Security check: ${existingDealIds.size} deals already have invoices for ${currentMonth}/${currentYear}`);
+    
+    if (existingInvoices && existingInvoices.length > 0) {
+      console.log('Existing invoices:', existingInvoices.map(i => ({ 
+        deal_id: i.deal_id, 
+        invoice_number: i.invoice_number,
+        is_recurring: i.is_recurring 
+      })));
+    }
 
     // 3. Filter deals that still need invoices
     const dealsNeedingInvoices = retainerDeals.filter((deal: RetainerDeal) => {
