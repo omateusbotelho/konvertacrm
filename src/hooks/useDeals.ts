@@ -51,12 +51,21 @@ export interface UpdateDealData extends Partial<CreateDealData> {
   loss_competitor?: string | null;
 }
 
-// Fetch all deals
-export function useDeals() {
+// Filter options for deals
+export interface DealFilters {
+  ownership?: 'all' | 'mine';
+  dealType?: 'all' | 'retainer' | 'project';
+  searchQuery?: string;
+}
+
+// Fetch all deals with filters
+export function useDeals(filters?: DealFilters) {
+  const { user } = useAuth();
+
   return useQuery({
-    queryKey: ['deals'],
+    queryKey: ['deals', filters],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('deals')
         .select(`
           *,
@@ -64,15 +73,41 @@ export function useDeals() {
         `)
         .order('created_at', { ascending: false });
 
+      // Apply ownership filter
+      if (filters?.ownership === 'mine' && user) {
+        query = query.or(`owner_id.eq.${user.id},closer_id.eq.${user.id},sdr_id.eq.${user.id}`);
+      }
+
+      // Apply deal type filter
+      if (filters?.dealType && filters.dealType !== 'all') {
+        query = query.eq('deal_type', filters.dealType);
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
-      return data as DealWithCompany[];
+
+      // Apply search filter client-side (for company name which is a join)
+      let filteredData = data as DealWithCompany[];
+      
+      if (filters?.searchQuery && filters.searchQuery.trim()) {
+        const search = filters.searchQuery.toLowerCase().trim();
+        filteredData = filteredData.filter(
+          (deal) =>
+            deal.title.toLowerCase().includes(search) ||
+            deal.companies?.name?.toLowerCase().includes(search)
+        );
+      }
+
+      return filteredData;
     },
+    enabled: !!user,
   });
 }
 
 // Fetch deals grouped by stage (for Kanban)
-export function useDealsByStage() {
-  const { data: deals, isLoading, error, refetch } = useDeals();
+export function useDealsByStage(filters?: DealFilters) {
+  const { data: deals, isLoading, error, refetch } = useDeals(filters);
 
   const stages: Record<DealStage, DealWithCompany[]> = {
     lead: [],

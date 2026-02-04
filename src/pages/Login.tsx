@@ -6,11 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { AppRole } from "@/types/auth";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
+import { toastSuccess, toastError } from "@/lib/toast";
 
 // Validation schemas
 const emailSchema = z.string().email("E-mail inválido");
@@ -53,7 +53,7 @@ export default function Login() {
       passwordSchema.parse(loginPassword);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message);
+        toastError(error.errors[0].message);
         return;
       }
     }
@@ -66,16 +66,16 @@ export default function Login() {
     
     if (error) {
       if (error.message.includes("Invalid login credentials")) {
-        toast.error("E-mail ou senha incorretos");
+        toastError("E-mail ou senha incorretos");
       } else if (error.message.includes("Email not confirmed")) {
-        toast.error("Por favor, confirme seu e-mail antes de fazer login");
+        toastError("Por favor, confirme seu e-mail antes de fazer login");
       } else {
-        toast.error(error.message || "Erro ao fazer login");
+        toastError(error.message || "Erro ao fazer login");
       }
       return;
     }
     
-    toast.success("Login realizado com sucesso!");
+    toastSuccess("Login realizado com sucesso!");
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -88,13 +88,13 @@ export default function Login() {
       passwordSchema.parse(signupPassword);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message);
+        toastError(error.errors[0].message);
         return;
       }
     }
     
     if (signupPassword !== signupConfirmPassword) {
-      toast.error("As senhas não coincidem");
+      toastError("As senhas não coincidem");
       return;
     }
     
@@ -106,14 +106,14 @@ export default function Login() {
     
     if (error) {
       if (error.message.includes("User already registered")) {
-        toast.error("Este e-mail já está cadastrado");
+        toastError("Este e-mail já está cadastrado");
       } else {
-        toast.error(error.message || "Erro ao criar conta");
+        toastError(error.message || "Erro ao criar conta");
       }
       return;
     }
     
-    toast.success("Conta criada! Verifique seu e-mail para confirmar o cadastro.");
+    toastSuccess("Conta criada! Verifique seu e-mail para confirmar o cadastro.");
     setActiveTab("login");
   };
 

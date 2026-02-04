@@ -1,17 +1,18 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { AppLayout } from "@/components/layout";
 import { PipelineHeader } from "@/components/pipeline/PipelineHeader";
+import { PipelineFilters, DealOwnershipFilter, DealTypeFilter } from "@/components/pipeline/PipelineFilters";
 import { DealModal } from "@/components/pipeline/DealModal";
 import { CloseDealDialog, CloseLostData, CloseWonData } from "@/components/pipeline/CloseDealDialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Clock, Plus, User } from "lucide-react";
+import { Building2, Clock, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useDealsByStage, useMoveDeal, DealWithCompany } from "@/hooks/useDeals";
+import { useDealsByStage, useMoveDeal, DealWithCompany, DealFilters } from "@/hooks/useDeals";
 import { useAuth } from "@/contexts/AuthContext";
-import { validateDealMovement, DealStage, getStageProbability } from "@/lib/deal-calculations";
+import { validateDealMovement, DealStage } from "@/lib/deal-calculations";
 import { toastError } from "@/lib/toast";
 
 // Stage configuration
@@ -172,8 +173,21 @@ function KanbanColumn({
 
 // Main Pipeline Page
 export default function Pipeline() {
-  const { role } = useAuth();
-  const { stages, isLoading, error } = useDealsByStage();
+  const { role, user } = useAuth();
+  
+  // Filter states
+  const [ownershipFilter, setOwnershipFilter] = useState<DealOwnershipFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<DealTypeFilter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Build filters object
+  const filters: DealFilters = useMemo(() => ({
+    ownership: ownershipFilter,
+    dealType: typeFilter,
+    searchQuery: searchQuery,
+  }), [ownershipFilter, typeFilter, searchQuery]);
+
+  const { stages, isLoading, error } = useDealsByStage(filters);
   const moveDeal = useMoveDeal();
 
   const [dealModalOpen, setDealModalOpen] = useState(false);
@@ -306,6 +320,16 @@ export default function Pipeline() {
           totalValue={totalValue} 
           weightedValue={weightedValue}
           onNewDeal={() => setDealModalOpen(true)}
+        />
+
+        {/* Filters Section */}
+        <PipelineFilters
+          ownershipFilter={ownershipFilter}
+          onOwnershipFilterChange={setOwnershipFilter}
+          typeFilter={typeFilter}
+          onTypeFilterChange={setTypeFilter}
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
         />
         
         {isLoading ? (
