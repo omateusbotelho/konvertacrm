@@ -3,7 +3,6 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
@@ -28,7 +27,6 @@ export default function Login() {
   useEffect(() => {
     if (user && !authLoading) {
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
-      // Redirect to dashboard, not root (since root now redirects to login)
       const destination = from === "/login" ? "/" : from;
       navigate(destination, { replace: true });
     }
@@ -37,7 +35,6 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate
     try {
       emailSchema.parse(email);
       passwordSchema.parse(password);
@@ -77,124 +74,96 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary p-12 flex-col justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent">
-              <span className="text-lg font-bold text-accent-foreground">K</span>
-            </div>
-            <span className="text-2xl font-semibold text-primary-foreground">KonvertaOS</span>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-sm space-y-8">
+        {/* Logo */}
+        <div className="flex flex-col items-center space-y-2">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
+            <span className="text-xl font-bold text-primary-foreground">K</span>
           </div>
-        </div>
-        
-        <div className="space-y-6">
-          <h1 className="text-4xl font-bold text-primary-foreground leading-tight">
-            Sistema de Gestão<br />
-            Comercial e Financeira<br />
-            <span className="text-accent">para sua Agência</span>
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">
+            KonvertaOS
           </h1>
-          <p className="text-primary-foreground/70 text-lg max-w-md">
-            Gerencie seu pipeline de vendas, controle financeiro e comissionamento da equipe em uma única plataforma.
-          </p>
         </div>
 
-        <div className="text-sm text-primary-foreground/50">
-          © {new Date().getFullYear()} KonvertaOS. Uso interno.
-        </div>
-      </div>
+        {/* Form */}
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-medium">
+              E-mail
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="seu@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="h-11"
+              disabled={isLoading}
+              autoComplete="email"
+            />
+          </div>
 
-      {/* Right side - Login form */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <Card className="w-full max-w-md border-0 shadow-none">
-          <CardHeader className="space-y-1 text-center">
-            <div className="lg:hidden flex items-center justify-center gap-2 mb-6">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-                <span className="text-lg font-bold text-primary-foreground">K</span>
-              </div>
-              <span className="text-2xl font-semibold">KonvertaOS</span>
-            </div>
-            <CardTitle className="text-2xl font-semibold">
-              Acesso ao Sistema
-            </CardTitle>
-            <CardDescription>
-              Entre com suas credenciais para acessar o painel
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="h-11"
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Senha</Label>
-                  <Link 
-                    to="/forgot-password" 
-                    className="text-sm text-accent hover:underline"
-                  >
-                    Esqueceu a senha?
-                  </Link>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="h-11"
-                  disabled={isLoading}
-                />
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="remember" 
-                  checked={rememberMe}
-                  onCheckedChange={(checked) => setRememberMe(checked === true)}
-                />
-                <label
-                  htmlFor="remember"
-                  className="text-sm text-muted-foreground cursor-pointer"
-                >
-                  Lembrar de mim
-                </label>
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-sm font-medium">
+              Senha
+            </Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="h-11"
+              disabled={isLoading}
+              autoComplete="current-password"
+            />
+          </div>
 
-              <Button 
-                type="submit" 
-                className="w-full h-11 bg-accent hover:bg-accent/90 text-accent-foreground"
-                disabled={isLoading}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="remember" 
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked === true)}
+              />
+              <label
+                htmlFor="remember"
+                className="text-sm text-muted-foreground cursor-pointer select-none"
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Entrando...
-                  </>
-                ) : (
-                  "Entrar"
-                )}
-              </Button>
-            </form>
+                Lembrar de mim
+              </label>
+            </div>
+            <Link 
+              to="/forgot-password" 
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Esqueceu a senha?
+            </Link>
+          </div>
 
-            <p className="text-xs text-center text-muted-foreground mt-6">
-              Acesso restrito a usuários autorizados.<br />
-              Entre em contato com o administrador para obter credenciais.
-            </p>
-          </CardContent>
-        </Card>
+          <Button 
+            type="submit" 
+            className="w-full h-11 font-medium"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Entrando...
+              </>
+            ) : (
+              "ENTRAR"
+            )}
+          </Button>
+        </form>
+
+        {/* Footer */}
+        <p className="text-xs text-center text-muted-foreground">
+          Acesso restrito a usuários autorizados
+        </p>
       </div>
     </div>
   );

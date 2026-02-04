@@ -1,10 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* KonvertaOS Design System
    A professional B2B CRM for marketing agencies
-   Colors: Warm cream backgrounds, Electric blue primary, Vibrant accent colors
+   Font: Inter | Colors: Dark mode default with Electric blue primary
 */
 
 @layer base {
@@ -163,7 +165,13 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Smooth theme transitions */
+  * {
+    transition: background-color 0.2s ease, border-color 0.2s ease;
   }
 
   /* Custom scrollbar */
