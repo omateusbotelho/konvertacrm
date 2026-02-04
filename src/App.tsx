@@ -22,6 +22,7 @@ import NotFound from "./pages/NotFound";
 import LGPDConsent from "./pages/LGPDConsent";
 import LGPDOptOut from "./pages/LGPDOptOut";
 import LGPDDeletion from "./pages/LGPDDeletion";
+import SecurityTest from "./pages/SecurityTest";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -102,6 +103,15 @@ const App = () => (
                   <Settings />
                 </ProtectedRoute>
               } />
+              
+              {/* Security Test - DEV ONLY */}
+              {import.meta.env.DEV && (
+                <Route path="/security-test" element={
+                  <ProtectedRoute>
+                    <SecurityTest />
+                  </ProtectedRoute>
+                } />
+              )}
               
               {/* 404 */}
               <Route path="*" element={<NotFound />} />
