@@ -29,45 +29,129 @@ export interface AuthUser {
   isLoading: boolean;
 }
 
-// Permission definitions per role
+// Permission definitions per role - Detailed matrix
 export const ROLE_PERMISSIONS = {
   admin: {
-    // Full access
+    // === DEALS ===
     canViewAllDeals: true,
+    canCreateDeal: true,
+    canEditAnyDeal: true,
+    canEditOwnDeals: true,
+    canDeleteDeals: true,
+    canCloseDealWon: true,
+    canMarkDealLost: true,
+    canMoveDealsToAnyStage: true,
+    
+    // === COMPANIES & CONTACTS ===
+    canViewAllCompanies: true,
+    canCreateCompany: true,
+    canEditCompany: true,
+    canDeleteCompany: true,
+    canViewAllContacts: true,
+    canCreateContact: true,
+    canEditContact: true,
+    canDeleteContact: true,
+    
+    // === COMMISSIONS ===
     canViewAllCommissions: true,
+    canViewOwnCommissions: true,
     canApproveCommissions: true,
     canConfigureRules: true,
+    
+    // === USERS ===
+    canViewUserList: true,
     canManageUsers: true,
-    canDeleteDeals: true,
-    canExportData: true,
+    
+    // === REPORTS & DASHBOARDS ===
+    canViewExecutiveDashboard: true,
+    canViewSellerDashboard: true,
+    canViewSDRDashboard: true,
     canViewAllReports: true,
-    canMoveDealsToAnyStage: true,
+    canExportData: true,
   },
   closer: {
-    // Closer permissions
+    // === DEALS ===
     canViewAllDeals: true,
-    canViewAllCommissions: false, // Only own
+    canCreateDeal: true,
+    canEditAnyDeal: false,
+    canEditOwnDeals: true,
+    canDeleteDeals: false,
+    canCloseDealWon: true,
+    canMarkDealLost: true,
+    canMoveDealsToAnyStage: true,
+    
+    // === COMPANIES & CONTACTS ===
+    canViewAllCompanies: true,
+    canCreateCompany: true,
+    canEditCompany: true,
+    canDeleteCompany: false,
+    canViewAllContacts: true,
+    canCreateContact: true,
+    canEditContact: true,
+    canDeleteContact: false,
+    
+    // === COMMISSIONS ===
+    canViewAllCommissions: false,
+    canViewOwnCommissions: true,
     canApproveCommissions: false,
     canConfigureRules: false,
+    
+    // === USERS ===
+    canViewUserList: true,
     canManageUsers: false,
-    canDeleteDeals: false, // Cannot delete closed deals
-    canExportData: false,
+    
+    // === REPORTS & DASHBOARDS ===
+    canViewExecutiveDashboard: false,
+    canViewSellerDashboard: true,
+    canViewSDRDashboard: false,
     canViewAllReports: false,
-    canMoveDealsToAnyStage: true,
+    canExportData: false,
   },
   sdr: {
-    // SDR permissions - most restricted
-    canViewAllDeals: false, // Only own
-    canViewAllCommissions: false, // Only own qualification
+    // === DEALS ===
+    canViewAllDeals: false, // Only own deals
+    canCreateDeal: true,
+    canEditAnyDeal: false,
+    canEditOwnDeals: true,
+    canDeleteDeals: false,
+    canCloseDealWon: false, // Cannot close deals
+    canMarkDealLost: true, // Can mark own deals as lost
+    canMoveDealsToAnyStage: false, // Only up to 'qualified'
+    
+    // === COMPANIES & CONTACTS ===
+    canViewAllCompanies: true,
+    canCreateCompany: true,
+    canEditCompany: true,
+    canDeleteCompany: false,
+    canViewAllContacts: true,
+    canCreateContact: true,
+    canEditContact: true,
+    canDeleteContact: false,
+    
+    // === COMMISSIONS ===
+    canViewAllCommissions: false,
+    canViewOwnCommissions: true, // Only qualification commissions
     canApproveCommissions: false,
     canConfigureRules: false,
+    
+    // === USERS ===
+    canViewUserList: true,
     canManageUsers: false,
-    canDeleteDeals: false,
-    canExportData: false,
+    
+    // === REPORTS & DASHBOARDS ===
+    canViewExecutiveDashboard: false,
+    canViewSellerDashboard: false,
+    canViewSDRDashboard: true,
     canViewAllReports: false,
-    canMoveDealsToAnyStage: false, // Only up to 'qualified'
+    canExportData: false,
   },
 } as const;
+
+// Stage restrictions for SDR role
+export const SDR_ALLOWED_STAGES = ['lead', 'qualified'] as const;
+
+// Stages that only closers/admins can move to
+export const CLOSER_ONLY_STAGES = ['proposal', 'negotiation', 'closed_won', 'closed_lost'] as const;
 
 export type Permission = keyof typeof ROLE_PERMISSIONS.admin;
 
