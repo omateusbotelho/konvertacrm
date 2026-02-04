@@ -4,7 +4,7 @@ import { KanbanColumn } from "./KanbanColumn";
 import { CloseDealDialog, CloseLostData, CloseWonData } from "./CloseDealDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { validateDealMovement, DealStage, getStageProbability } from "@/lib/deal-calculations";
-import { useToast } from "@/hooks/use-toast";
+import { toastSuccess, toastError } from "@/lib/toast";
 
 interface KanbanBoardProps {
   stages: Stage[];
@@ -20,7 +20,6 @@ interface PendingMove {
 
 export function KanbanBoard({ stages, setStages }: KanbanBoardProps) {
   const { role } = useAuth();
-  const { toast } = useToast();
   
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
   const [closeDialogType, setCloseDialogType] = useState<'won' | 'lost'>('won');
@@ -91,11 +90,7 @@ export function KanbanBoard({ stages, setStages }: KanbanBoardProps) {
     );
 
     if (!validation.allowed) {
-      toast({
-        title: "Movimento não permitido",
-        description: validation.error,
-        variant: "destructive",
-      });
+      toastError(validation.error || "Movimento não permitido");
       return;
     }
 
@@ -137,12 +132,11 @@ export function KanbanBoard({ stages, setStages }: KanbanBoardProps) {
 
     setPendingMove(null);
     
-    toast({
-      title: closeDialogType === 'won' ? "Deal fechado!" : "Deal marcado como perdido",
-      description: closeDialogType === 'won' 
-        ? "O deal foi movido para Fechado Won." 
-        : "O motivo da perda foi registrado.",
-    });
+    toastSuccess(
+      closeDialogType === 'won' 
+        ? "Deal fechado com sucesso!" 
+        : "Deal marcado como perdido"
+    );
   };
 
   const handleDragOver = (e: React.DragEvent) => {
