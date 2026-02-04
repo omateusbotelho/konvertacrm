@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import konvertaLogo from "@/assets/konverta-logo.png";
 
 interface NavItem {
   name: string;
@@ -80,21 +81,16 @@ function SidebarNavContent({ collapsed, onNavigate }: SidebarContentProps) {
       {/* Logo */}
       <div className={cn(
         "flex h-16 items-center border-b border-sidebar-border px-4",
-        collapsed ? "justify-center" : "justify-between"
+        collapsed ? "justify-center" : "justify-start"
       )}>
-        {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary">
-              <span className="text-sm font-bold text-sidebar-primary-foreground">K</span>
-            </div>
-            <span className="text-lg font-semibold text-sidebar-foreground">KonvertaOS</span>
-          </div>
-        )}
-        {collapsed && (
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary">
-            <span className="text-sm font-bold text-sidebar-primary-foreground">K</span>
-          </div>
-        )}
+        <img 
+          src={konvertaLogo} 
+          alt="Konverta" 
+          className={cn(
+            "object-contain transition-all",
+            collapsed ? "h-8 w-8" : "h-10 w-auto max-w-[140px]"
+          )}
+        />
       </div>
 
       {/* User info */}
