@@ -16,6 +16,8 @@ import Companies from "./pages/Companies";
 import Financial from "./pages/Financial";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
+import Activities from "./pages/Activities";
+import Commissions from "./pages/Commissions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +64,16 @@ const App = () => (
             <Route path="/reports" element={
               <ProtectedRoute requiredPermission="canViewAllReports">
                 <Reports />
+              </ProtectedRoute>
+            } />
+            <Route path="/activities" element={
+              <ProtectedRoute>
+                <Activities />
+              </ProtectedRoute>
+            } />
+            <Route path="/commissions" element={
+              <ProtectedRoute>
+                <Commissions />
               </ProtectedRoute>
             } />
             <Route path="/settings" element={
