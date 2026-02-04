@@ -1,73 +1,104 @@
-# Welcome to your Lovable project
+# KonvertaCRM
 
-## Project info
+Sistema de CRM para gestão de vendas, pipeline, comissões e faturamento.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🚀 Setup Rápido
 
-## How can I edit this code?
+### 1. Clonar e Instalar
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+```bash
 git clone <YOUR_GIT_URL>
+cd konvertacrm
+npm install
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### 2. Configurar Variáveis de Ambiente
 
-# Step 3: Install the necessary dependencies.
-npm i
+```bash
+cp .env.example .env
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+Edite o arquivo `.env` com suas credenciais:
+
+| Variável | Obrigatório | Descrição |
+|----------|-------------|-----------|
+| `VITE_SUPABASE_URL` | ✅ | URL do projeto Supabase |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | ✅ | Chave pública do Supabase |
+| `VITE_SUPABASE_PROJECT_ID` | ✅ | ID do projeto Supabase |
+| `VITE_APP_URL` | ❌ | URL da aplicação (default: localhost:8080) |
+| `VITE_SENTRY_DSN` | ❌ | DSN do Sentry para monitoramento |
+
+### 3. Rodar em Desenvolvimento
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+A aplicação estará disponível em `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 4. Build para Produção
 
-**Use GitHub Codespaces**
+```bash
+npm run build
+npm run preview  # Para testar o build localmente
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🧪 Testes
 
-## What technologies are used for this project?
+```bash
+npm run test        # Rodar testes uma vez
+npm run test:watch  # Rodar testes em modo watch
+```
 
-This project is built with:
+## 🛠️ Tecnologias
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **Frontend**: React 18, TypeScript, Vite
+- **UI**: Tailwind CSS, shadcn/ui, Radix UI
+- **State**: TanStack Query (React Query)
+- **Backend**: Supabase (Auth, Database, Edge Functions)
+- **Forms**: React Hook Form, Zod
+- **Charts**: Recharts
 
-## How can I deploy this project?
+## 📁 Estrutura do Projeto
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+```
+src/
+├── components/     # Componentes React
+│   ├── ui/         # Componentes base (shadcn)
+│   ├── dashboard/  # Componentes do dashboard
+│   ├── pipeline/   # Componentes do pipeline
+│   └── ...
+├── hooks/          # Custom hooks
+├── contexts/       # React contexts
+├── lib/            # Utilitários e helpers
+├── pages/          # Páginas da aplicação
+├── types/          # TypeScript types
+└── integrations/   # Integrações (Supabase)
 
-## Can I connect a custom domain to my Lovable project?
+supabase/
+├── functions/      # Edge Functions
+└── migrations/     # Migrações do banco
+```
 
-Yes, you can!
+## 🔐 Variáveis de Ambiente
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Veja `.env.example` para lista completa de variáveis.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+**Importante**: A aplicação valida as variáveis de ambiente no startup. Se alguma variável obrigatória estiver faltando, um erro claro será exibido.
+
+## 📚 Documentação Adicional
+
+- [Lovable Docs](https://docs.lovable.dev)
+- [Supabase Docs](https://supabase.com/docs)
+- [shadcn/ui](https://ui.shadcn.com)
+
+## 🤝 Contribuindo
+
+1. Crie uma branch para sua feature
+2. Faça suas alterações
+3. Rode os testes
+4. Abra um PR
+
+## 📝 Licença
+
+Proprietary - Konverta
