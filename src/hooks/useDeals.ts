@@ -237,7 +237,7 @@ export function useUpdateDeal() {
 // Move deal to a new stage (with commission/activity creation)
 export function useMoveDeal() {
   const queryClient = useQueryClient();
-  const { user, role } = useAuth();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({
@@ -261,9 +261,42 @@ export function useMoveDeal() {
     }) => {
       if (!user) throw new Error('Usuário não autenticado');
 
+      // For closed_won, use edge function to handle commissions
+      if (toStage === 'closed_won') {
+        const { data, error } = await supabase.functions.invoke('process-deal-commissions', {
+          body: {
+            deal_id: dealId,
+            actual_close_date: additionalData?.actualCloseDate || new Date().toISOString().split('T')[0],
+            start_recurring: additionalData?.startRecurring || false,
+          },
+        });
+
+        if (error) {
+          console.error('Edge function error:', error);
+          throw new Error(error.message || 'Erro ao processar comissões');
+        }
+
+        if (data?.error) {
+          throw new Error(data.error);
+        }
+
+        // Create activity for stage change
+        await supabase.from('activities').insert({
+          title: `Deal fechado como ganho`,
+          type: 'note',
+          deal_id: dealId,
+          company_id: dealData.company_id,
+          created_by: user.id,
+          is_completed: true,
+          completed_at: new Date().toISOString(),
+        });
+
+        return data;
+      }
+
+      // For other stage movements, use direct update
       const newProbability = getStageProbability(toStage);
 
-      // Prepare update data
       const updateData: DealUpdate = {
         stage: toStage,
         probability: newProbability,
@@ -274,11 +307,6 @@ export function useMoveDeal() {
         updateData.loss_reason = additionalData.lossReason as Database['public']['Enums']['loss_reason'];
         updateData.loss_notes = additionalData.lossNotes;
         updateData.loss_competitor = additionalData.lossCompetitor;
-      }
-
-      // Handle closed_won
-      if (toStage === 'closed_won' && additionalData) {
-        updateData.actual_close_date = additionalData.actualCloseDate || new Date().toISOString().split('T')[0];
       }
 
       // Update the deal
@@ -309,71 +337,20 @@ export function useMoveDeal() {
           .from('commission_rules')
           .select('*')
           .eq('commission_type', 'qualification')
-          .eq('is_active', true)
-          .single();
+          .eq('is_active', true);
 
-        if (rules && rules.percentage) {
-          const commissionAmount = dealData.value * (rules.percentage / 100);
+        const rule = rules?.[0];
+        if (rule && rule.percentage) {
+          const commissionAmount = dealData.value * (rule.percentage / 100);
           await supabase.from('commissions').insert({
             deal_id: dealId,
             user_id: dealData.sdr_id,
             commission_type: 'qualification',
             base_value: dealData.value,
-            percentage: rules.percentage,
+            percentage: rule.percentage,
             amount: commissionAmount,
             status: 'pending',
-          });
-        }
-      }
-
-      // Create commission on closing (Closer)
-      if (toStage === 'closed_won') {
-        const closerId = dealData.closer_id || user.id;
-        
-        // Get closing commission rule
-        const { data: rules } = await supabase
-          .from('commission_rules')
-          .select('*')
-          .eq('commission_type', 'closing')
-          .eq('is_active', true)
-          .single();
-
-        if (rules && rules.percentage) {
-          const commissionAmount = dealData.value * (rules.percentage / 100);
-          await supabase.from('commissions').insert({
-            deal_id: dealId,
-            user_id: closerId,
-            commission_type: 'closing',
-            base_value: dealData.value,
-            percentage: rules.percentage,
-            amount: commissionAmount,
-            status: 'pending',
-          });
-        }
-
-        // Approve SDR qualification commission
-        await supabase
-          .from('commissions')
-          .update({ status: 'approved' })
-          .eq('deal_id', dealId)
-          .eq('commission_type', 'qualification');
-
-        // Create first invoice for retainer if requested
-        if (additionalData?.startRecurring && dealData.deal_type === 'retainer' && dealData.monthly_value) {
-          const now = new Date();
-          const dueDate = new Date(now.getFullYear(), now.getMonth() + 1, 10);
-          
-          await supabase.from('invoices').insert({
-            deal_id: dealId,
-            company_id: dealData.company_id,
-            invoice_number: `INV-${Date.now()}`,
-            amount: dealData.monthly_value,
-            issue_date: now.toISOString().split('T')[0],
-            due_date: dueDate.toISOString().split('T')[0],
-            is_recurring: true,
-            recurrence_month: now.getMonth() + 1,
-            recurrence_year: now.getFullYear(),
-            status: 'pending',
+            notes: `Comissão de qualificação - ${dealData.title}`,
           });
         }
       }
@@ -384,11 +361,14 @@ export function useMoveDeal() {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       queryClient.invalidateQueries({ queryKey: ['commissions'] });
       queryClient.invalidateQueries({ queryKey: ['activities'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
       
       if (variables.toStage === 'closed_won') {
         toastSuccess('🎉 Deal fechado com sucesso! Comissões criadas.');
       } else if (variables.toStage === 'closed_lost') {
         toastSuccess('Deal marcado como perdido.');
+      } else if (variables.toStage === 'qualified') {
+        toastSuccess('Deal qualificado! Comissão de qualificação criada.');
       }
     },
     onError: (error) => {

@@ -1,1 +1,13 @@
 project_id = "fkusofyzjhoxmezruoyd"
+
+[functions.admin-create-user]
+verify_jwt = false
+
+[functions.lgpd-anonymize]
+verify_jwt = false
+
+[functions.retainer-lifecycle]
+verify_jwt = false
+
+[functions.process-deal-commissions]
+verify_jwt = false
