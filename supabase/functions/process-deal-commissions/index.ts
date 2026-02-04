@@ -218,43 +218,59 @@ serve(async (req) => {
     const commissionsToCreate: any[] = [];
 
     // 4. Find and calculate CLOSING commission for Closer
-    const closerId = deal.closer_id || deal.owner_id;
-    const closingRule = (rules || []).find((r: CommissionRule) => 
-      r.commission_type === 'closing' &&
-      (r.deal_type === null || r.deal_type === deal.deal_type) &&
-      (r.role === null || r.role === 'closer')
-    );
-
-    if (closingRule && closerId) {
-      console.log(`Found closing rule: ${closingRule.name}`);
-      
-      let closingAmount = 0;
-      let closingPercentage = closingRule.percentage || 0;
-
-      if (closingRule.is_tiered && tiersByRule[closingRule.id]) {
-        closingAmount = calculateTieredCommission(dealValue, tiersByRule[closingRule.id]);
-        // For tiered, calculate effective percentage
-        closingPercentage = dealValue > 0 ? (closingAmount / dealValue) * 100 : 0;
-        console.log(`Tiered closing commission: R$ ${closingAmount.toFixed(2)}`);
-      } else if (closingRule.percentage) {
-        closingAmount = calculateFixedCommission(dealValue, closingRule.percentage);
-        console.log(`Fixed closing commission (${closingRule.percentage}%): R$ ${closingAmount.toFixed(2)}`);
-      }
-
-      if (closingAmount > 0) {
-        commissionsToCreate.push({
-          deal_id: deal.id,
-          user_id: closerId,
-          commission_type: 'closing',
-          base_value: dealValue,
-          percentage: closingPercentage,
-          amount: closingAmount,
-          status: 'pending',
-          notes: `Comissão de fechamento - ${deal.title}`,
-        });
-      }
+    const closerId = deal.closer_id; // No fallback to owner_id - only actual closers get commission
+    
+    if (!closerId) {
+      console.log('No closer assigned to this deal, skipping closing commission');
     } else {
-      console.log('No closing rule found or no closer assigned');
+      // Verify the user is actually a Closer or Admin
+      const { data: userRole } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', closerId)
+        .single();
+
+      if (userRole?.role !== 'closer' && userRole?.role !== 'admin') {
+        console.log(`User ${closerId} has role '${userRole?.role}', not a closer - skipping closing commission`);
+      } else {
+        const closingRule = (rules || []).find((r: CommissionRule) => 
+          r.commission_type === 'closing' &&
+          (r.deal_type === null || r.deal_type === deal.deal_type) &&
+          (r.role === null || r.role === 'closer')
+        );
+
+        if (closingRule) {
+          console.log(`Found closing rule: ${closingRule.name}`);
+          
+          let closingAmount = 0;
+          let closingPercentage = closingRule.percentage || 0;
+
+          if (closingRule.is_tiered && tiersByRule[closingRule.id]) {
+            closingAmount = calculateTieredCommission(dealValue, tiersByRule[closingRule.id]);
+            // For tiered, calculate effective percentage
+            closingPercentage = dealValue > 0 ? (closingAmount / dealValue) * 100 : 0;
+            console.log(`Tiered closing commission: R$ ${closingAmount.toFixed(2)}`);
+          } else if (closingRule.percentage) {
+            closingAmount = calculateFixedCommission(dealValue, closingRule.percentage);
+            console.log(`Fixed closing commission (${closingRule.percentage}%): R$ ${closingAmount.toFixed(2)}`);
+          }
+
+          if (closingAmount > 0) {
+            commissionsToCreate.push({
+              deal_id: deal.id,
+              user_id: closerId,
+              commission_type: 'closing',
+              base_value: dealValue,
+              percentage: closingPercentage,
+              amount: closingAmount,
+              status: 'pending',
+              notes: `Comissão de fechamento - ${deal.title}`,
+            });
+          }
+        } else {
+          console.log('No closing rule found for this deal type');
+        }
+      }
     }
 
     // 5. Check for existing QUALIFICATION commission and approve it
