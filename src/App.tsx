@@ -19,6 +19,9 @@ import Settings from "./pages/Settings";
 import Activities from "./pages/Activities";
 import Commissions from "./pages/Commissions";
 import NotFound from "./pages/NotFound";
+import LGPDConsent from "./pages/LGPDConsent";
+import LGPDOptOut from "./pages/LGPDOptOut";
+import LGPDDeletion from "./pages/LGPDDeletion";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +38,12 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            
+            {/* LGPD public routes */}
+            <Route path="/lgpd/consentimento" element={<LGPDConsent />} />
+            <Route path="/lgpd/opt-out" element={<LGPDOptOut />} />
+            <Route path="/lgpd/exclusao" element={<LGPDDeletion />} />
+            
             {/* Protected routes */}
             <Route path="/" element={
               <ProtectedRoute>

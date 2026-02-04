@@ -6,8 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { TeamManagement } from "@/components/settings/TeamManagement";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Settings() {
+  const { profile } = useAuth();
+  const initials = profile?.full_name
+    ?.split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || 'U';
   return (
     <AppLayout title="Configurações" subtitle="Gerencie sua conta e preferências">
       <Tabs defaultValue="profile" className="space-y-6">
@@ -27,7 +36,7 @@ export default function Settings() {
             <CardContent className="space-y-6">
               <div className="flex items-center gap-6">
                 <Avatar className="h-20 w-20">
-                  <AvatarFallback className="text-2xl bg-primary text-primary-foreground">AD</AvatarFallback>
+                  <AvatarFallback className="text-2xl bg-primary text-primary-foreground">{initials}</AvatarFallback>
                 </Avatar>
                 <Button variant="outline">Alterar foto</Button>
               </div>
@@ -35,15 +44,15 @@ export default function Settings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome</Label>
-                  <Input id="name" defaultValue="Admin" />
+                  <Input id="name" defaultValue={profile?.full_name || ''} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">E-mail</Label>
-                  <Input id="email" type="email" defaultValue="admin@konverta.com" />
+                  <Input id="email" type="email" defaultValue={profile?.email || ''} disabled />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Telefone</Label>
-                  <Input id="phone" defaultValue="(11) 99999-9999" />
+                  <Input id="phone" defaultValue={profile?.phone || ''} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="role">Cargo</Label>
@@ -82,11 +91,7 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="team" className="space-y-6">
-          <Card>
-            <CardContent className="p-12 text-center text-muted-foreground">
-              <p>Gerenciamento de equipe em desenvolvimento</p>
-            </CardContent>
-          </Card>
+          <TeamManagement />
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-6">
