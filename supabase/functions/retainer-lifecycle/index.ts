@@ -121,24 +121,48 @@ serve(async (req: Request) => {
 
     const { data: expiringDeals } = await supabase
       .from("deals")
-      .select("id, title, closer_id, company_id, created_at, contract_duration_months")
+      .select("id, title, closer_id, company_id, actual_close_date, created_at, contract_duration_months")
       .eq("deal_type", "retainer")
       .eq("stage", "closed_won");
 
     const contractAlerts: string[] = [];
     
     for (const deal of expiringDeals || []) {
-      if (deal.created_at && deal.contract_duration_months) {
-        const startDate = new Date(deal.created_at);
+      // Use actual_close_date as contract start date if available
+      const startDateStr = deal.actual_close_date || deal.created_at;
+      if (startDateStr && deal.contract_duration_months) {
+        const startDate = new Date(startDateStr);
         const endDate = new Date(startDate);
         endDate.setMonth(endDate.getMonth() + deal.contract_duration_months);
         
         // Check if contract ends within 30 days
         if (endDate <= thirtyDaysFromNow && endDate > now) {
-          contractAlerts.push(`Deal ${deal.id} (${deal.title}) expires on ${endDate.toISOString().split("T")[0]}`);
+          const daysUntilExpiry = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          contractAlerts.push(`Deal ${deal.id} (${deal.title}) expires in ${daysUntilExpiry} days`);
           
-          // TODO: Send notification to closer_id
-          // This could create an activity or send an email
+          // Check if renewal activity already exists this month
+          const { data: existingActivity } = await supabase
+            .from("activities")
+            .select("id")
+            .eq("deal_id", deal.id)
+            .eq("title", "Alerta: Contrato próximo do vencimento")
+            .gte("created_at", new Date(now.getFullYear(), now.getMonth(), 1).toISOString())
+            .maybeSingle();
+
+          if (!existingActivity) {
+            // Create renewal alert activity for the closer
+            await supabase.from("activities").insert({
+              title: "Alerta: Contrato próximo do vencimento",
+              description: `O contrato "${deal.title}" vence em ${daysUntilExpiry} dias (${endDate.toLocaleDateString('pt-BR')}). Agende uma reunião de renovação com o cliente.`,
+              type: "task",
+              deal_id: deal.id,
+              company_id: deal.company_id,
+              assigned_to: deal.closer_id,
+              created_by: deal.closer_id,
+              due_date: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Due in 7 days
+              is_completed: false,
+            });
+          }
         }
       }
     }

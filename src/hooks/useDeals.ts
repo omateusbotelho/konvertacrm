@@ -166,7 +166,17 @@ export function useUpdateDeal() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateDealData }) => {
+    mutationFn: async ({ 
+      id, 
+      data, 
+      previousCloserId 
+    }: { 
+      id: string; 
+      data: UpdateDealData;
+      previousCloserId?: string | null;
+    }) => {
+      if (!user) throw new Error('Usuário não autenticado');
+
       // Recalculate total value if retainer values changed
       let updateData: DealUpdate = { ...data };
       
@@ -180,14 +190,42 @@ export function useUpdateDeal() {
         .from('deals')
         .update(updateData)
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          companies!deals_company_id_fkey (id, name)
+        `)
         .single();
 
       if (error) throw error;
+
+      // Create activity if Closer was assigned/changed
+      if (data.closer_id && data.closer_id !== previousCloserId) {
+        // Get closer name
+        const { data: closerProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', data.closer_id)
+          .single();
+
+        const closerName = closerProfile?.full_name || 'Closer';
+
+        await supabase.from('activities').insert({
+          title: `Deal atribuído para ${closerName}`,
+          type: 'note',
+          deal_id: id,
+          company_id: deal.company_id,
+          created_by: user.id,
+          is_completed: true,
+          completed_at: new Date().toISOString(),
+        });
+      }
+
       return deal;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
+      toastSuccess('Deal atualizado com sucesso!');
     },
     onError: (error) => {
       console.error('Error updating deal:', error);
