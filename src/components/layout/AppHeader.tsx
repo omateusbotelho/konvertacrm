@@ -1,4 +1,4 @@
-import { Bell, Search, User } from "lucide-react";
+import { Bell, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,13 +10,40 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface AppHeaderProps {
   title: string;
   subtitle?: string;
 }
 
+const roleLabels = {
+  admin: { label: 'Admin', color: 'bg-accent text-accent-foreground' },
+  closer: { label: 'Closer', color: 'bg-blue-500/20 text-blue-400' },
+  sdr: { label: 'SDR', color: 'bg-purple-500/20 text-purple-400' },
+};
+
 export function AppHeader({ title, subtitle }: AppHeaderProps) {
+  const { profile, role, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
+  const getInitials = () => {
+    if (!profile?.full_name) return 'U';
+    const names = profile.full_name.split(' ');
+    if (names.length >= 2) {
+      return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return names[0][0].toUpperCase();
+  };
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div>
@@ -50,7 +77,7 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
             <Button variant="ghost" className="relative h-9 w-9 rounded-full">
               <Avatar className="h-9 w-9">
                 <AvatarFallback className="bg-primary text-primary-foreground">
-                  AD
+                  {getInitials()}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -58,17 +85,33 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">Admin</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium leading-none">
+                    {profile?.full_name || 'Usuário'}
+                  </p>
+                  {role && (
+                    <Badge className={cn("text-xs", roleLabels[role].color)}>
+                      {roleLabels[role].label}
+                    </Badge>
+                  )}
+                </div>
                 <p className="text-xs leading-none text-muted-foreground">
-                  admin@konverta.com
+                  {profile?.email}
                 </p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Perfil</DropdownMenuItem>
-            <DropdownMenuItem>Configurações</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/settings')}>
+              Perfil
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/settings')}>
+              Configurações
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
+            <DropdownMenuItem 
+              className="text-destructive"
+              onClick={handleSignOut}
+            >
               Sair
             </DropdownMenuItem>
           </DropdownMenuContent>

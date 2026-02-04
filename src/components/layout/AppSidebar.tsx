@@ -8,29 +8,64 @@ import {
   Settings,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Shield,
+  UserCog
 } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Badge } from "@/components/ui/badge";
 
-const navigation = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  requiredPermission?: string;
+  roles?: ('admin' | 'closer' | 'sdr')[];
+}
+
+const navigation: NavItem[] = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Pipeline", href: "/pipeline", icon: Kanban },
   { name: "Contatos", href: "/contacts", icon: Users },
   { name: "Empresas", href: "/companies", icon: Building2 },
-  { name: "Financeiro", href: "/financial", icon: DollarSign },
-  { name: "Relatórios", href: "/reports", icon: BarChart3 },
+  { name: "Financeiro", href: "/financial", icon: DollarSign, roles: ['admin', 'closer'] },
+  { name: "Relatórios", href: "/reports", icon: BarChart3, roles: ['admin'] },
 ];
 
-const bottomNavigation = [
+const bottomNavigation: NavItem[] = [
+  { name: "Usuários", href: "/users", icon: UserCog, roles: ['admin'] },
   { name: "Configurações", href: "/settings", icon: Settings },
 ];
 
+const roleLabels = {
+  admin: { label: 'Admin', color: 'bg-accent text-accent-foreground' },
+  closer: { label: 'Closer', color: 'bg-blue-500/20 text-blue-400' },
+  sdr: { label: 'SDR', color: 'bg-purple-500/20 text-purple-400' },
+};
+
 export function AppSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { role, profile, signOut } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
+  const canAccessItem = (item: NavItem) => {
+    if (!item.roles) return true;
+    if (!role) return false;
+    return item.roles.includes(role);
+  };
+
+  const filteredNavigation = navigation.filter(canAccessItem);
+  const filteredBottomNavigation = bottomNavigation.filter(canAccessItem);
 
   return (
     <aside 
@@ -60,9 +95,30 @@ export function AppSidebar() {
           )}
         </div>
 
+        {/* User info */}
+        {!collapsed && profile && role && (
+          <div className="px-4 py-3 border-b border-sidebar-border">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent">
+                <span className="text-sm font-medium text-sidebar-accent-foreground">
+                  {profile.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-sidebar-foreground truncate">
+                  {profile.full_name}
+                </p>
+                <Badge className={cn("text-xs mt-0.5", roleLabels[role].color)}>
+                  {roleLabels[role].label}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Navigation */}
         <nav className="flex-1 space-y-1 px-3 py-4">
-          {navigation.map((item) => {
+          {filteredNavigation.map((item) => {
             const isActive = location.pathname === item.href;
             return (
               <NavLink
@@ -85,7 +141,7 @@ export function AppSidebar() {
 
         {/* Bottom section */}
         <div className="border-t border-sidebar-border p-3 space-y-1">
-          {bottomNavigation.map((item) => {
+          {filteredBottomNavigation.map((item) => {
             const isActive = location.pathname === item.href;
             return (
               <NavLink
@@ -106,6 +162,7 @@ export function AppSidebar() {
           })}
           
           <button
+            onClick={handleSignOut}
             className={cn(
               "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
               collapsed && "justify-center px-2"
